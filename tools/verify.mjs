@@ -448,8 +448,16 @@ const softwareGL = /swiftshader|llvmpipe|software|mesa\s+offscreen/i.test(render
 console.log('       renderer: ' + rendererName + (softwareGL ? '  (software rasteriser — timings are not real GPU timings)' : ''));
 await cdp.eval('window.__understory.act("sow"); true');
 await sleep(6000);
-const frameMs = await cdp.eval('window.__understory.frameMs()');
-const workMs = await cdp.eval('window.__understory.workMs()');
+let frameMs = await cdp.eval('window.__understory.frameMs()');
+let workMs = await cdp.eval('window.__understory.workMs()');
+// The headless browser throttles rAF and sometimes yields an empty sample window (0 ms), which is
+// a measurement gap, not a fast frame. Re-measure before reporting either way.
+for (let attempt = 0; attempt < 3 && (!(frameMs > 0) || !(workMs >= 0)); attempt += 1) {
+  await cdp.eval('window.__understory.act("sow"); true');
+  await sleep(3000);
+  frameMs = await cdp.eval('window.__understory.frameMs()');
+  workMs = await cdp.eval('window.__understory.workMs()');
+}
 const measured = 'frame interval ' + frameMs + ' ms · callback work ' + workMs + ' ms';
 if (softwareGL) warn('frame budget not enforceable on a software rasteriser', measured);
 else check('median frame ≤ 24 ms (idle, high quality)', frameMs > 0 && frameMs <= 24, measured);

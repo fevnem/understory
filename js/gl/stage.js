@@ -579,7 +579,9 @@ export function createStage(opts) {
 
     defaultPresent(target) {
       presentProg.use();
-      presentProg.u('u_scene', target.tex, 0);
+      // u() binds a texture only for { texture, unit } — a raw WebGLTexture binds nothing and the
+      // sampler silently keeps whatever unit 0 held.
+      presentProg.u('u_scene', { texture: target.tex, unit: 0 });
       fullQuad.draw(presentProg);
     }
   };
