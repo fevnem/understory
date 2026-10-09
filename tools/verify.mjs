@@ -443,10 +443,18 @@ for (const id of present) {
 /* ---------- frame budget ---------- */
 
 console.log('\n── frame budget');
+const rendererName = (await cdp.eval('window.__understory.renderer')) || 'unknown';
+const softwareGL = /swiftshader|llvmpipe|software|mesa\s+offscreen/i.test(rendererName);
+console.log('       renderer: ' + rendererName + (softwareGL ? '  (software rasteriser — timings are not real GPU timings)' : ''));
 await cdp.eval('window.__understory.act("sow"); true');
-await sleep(2500);
+await sleep(6000);
 const frameMs = await cdp.eval('window.__understory.frameMs()');
-check('median frame ≤ 24 ms (idle, high quality)', frameMs > 0 && frameMs <= 24, frameMs + ' ms');
+const workMs = await cdp.eval('window.__understory.workMs()');
+const measured = 'frame interval ' + frameMs + ' ms · callback work ' + workMs + ' ms';
+if (softwareGL) warn('frame budget not enforceable on a software rasteriser', measured);
+else check('median frame ≤ 24 ms (idle, high quality)', frameMs > 0 && frameMs <= 24, measured);
+if (softwareGL) warn('callback work not enforceable on a software rasteriser', measured);
+else check('callback work stays under 8 ms', workMs >= 0 && workMs <= 8, measured);
 
 const finalErrors = cdp.logs.filter((l) => l.level === 'error' || l.level === 'exception');
 check('no console errors overall', finalErrors.length === 0, finalErrors.length ? String(finalErrors[0].text).slice(0, 110) : '');

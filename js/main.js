@@ -221,7 +221,9 @@ export async function boot() {
   /* ---------------- frame loop ---------------- */
 
   let last = performance.now();
-  const frameTimes = [];
+  let lastFrameAt = 0;
+  const frameGaps = [];
+  const frameWork = [];
   let frames = 0;
   let running = true;
 
@@ -242,10 +244,15 @@ export async function boot() {
       }
     }
 
-    if (frames % 10 === 0 && frameTimes.length < 240) {
-      const ms = performance.now() - now;
-      frameTimes.push(ms);
-    }
+    // Two honest numbers: the gap between frames (what the eye feels) and the work done
+    // inside the callback (what this code costs). WebGL calls are async, so the gap is the
+    // real frame budget; the work number tells you when JS itself is the problem.
+    if (lastFrameAt) frameGaps.push(now - lastFrameAt);
+    lastFrameAt = now;
+    frameWork.push(performance.now() - now);
+    if (frameGaps.length > 300) frameGaps.shift();
+    if (frameWork.length > 300) frameWork.shift();
+
     window.__understory.frames = frames;
     requestAnimationFrame(loop);
   }
@@ -261,31 +268,41 @@ export async function boot() {
 
   /* ---------------- the harness's probe surface ---------------- */
 
-  function medianFrameMs() {
-    if (!frameTimes.length) return 0;
-    const sorted = frameTimes.slice().sort(function (a, b) { return a - b; });
+  function median(list) {
+    if (!list.length) return 0;
+    const sorted = list.slice().sort(function (a, b) { return a - b; });
     return Math.round(sorted[Math.floor(sorted.length / 2)] * 100) / 100;
   }
+  function medianFrameMs() { return median(frameGaps); }
+
+  const glInfo = (function rendererName() {
+    if (!stage) return 'none';
+    const ext = stage.gl.getExtension('WEBGL_debug_renderer_info');
+    return ext ? String(stage.gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : 'unknown';
+  })();
 
   window.__understory = {
-    boot: { at: Date.now(), quality, hasGL, reducedMotion, theme, probe, skipped },
+    boot: { at: Date.now(), quality, hasGL, reducedMotion, theme, probe, skipped, renderer: glInfo },
     version: 1,
     bus, store, timer, stage, ctx,
     modules,
     ids: function () { return Object.keys(modules); },
     handle: function (id) { return modules[id] ? modules[id].handle : null; },
     stats: function () {
-      const out = { quality, hasGL, views: {}, errors: 0 };
+      const out = { quality, hasGL, renderer: glInfo, views: {}, errors: 0 };
       for (const id of Object.keys(modules)) {
         const h = modules[id].handle;
         try { out.views[id] = typeof h.stats === 'function' ? h.stats() : { noStats: true }; }
         catch (err) { out.views[id] = { error: err && err.message }; }
       }
       out.frameMs = medianFrameMs();
+      out.workMs = median(frameWork);
       out.frames = frames;
       return out;
     },
     frameMs: medianFrameMs,
+    workMs: function () { return median(frameWork); },
+    renderer: glInfo,
     setView, toggleMute,
     act: function (what) {
       if (what === 'sow') return timer.beginFocus();

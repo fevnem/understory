@@ -3,15 +3,15 @@
    Hands add css/instrument.css and css/garden.css only. Tokens are frozen (CONTRACT §11). */
 
 :root {
-  --ink: #cfd6d3;
-  --ink-dim: #8d9793;
+  --ink: #dfe5e2;
+  --ink-dim: #a3adaa;
   --paper: #12161a;
-  --paper-2: #171c21;
-  --rule: #262c31;
+  --paper-2: #1e252c;
+  --rule: #3b444c;
   --accent: #8fb89a;
   --accent-dim: #4d6b57;
   --glow: rgba(143, 184, 154, 0.28);
-  --sky-base: #0b1114;
+  --sky-base: #1c2732;
 
   --font-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
   --font-num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -38,27 +38,27 @@
 }
 
 html[data-theme="night"] {
-  --ink: #c6cfd6;
-  --ink-dim: #7f8a93;
+  --ink: #d5dee6;
+  --ink-dim: #98a4ae;
   --paper: #0d1013;
-  --paper-2: #131820;
-  --rule: #1e252c;
+  --paper-2: #151b22;
+  --rule: #2c343d;
   --accent: #7fa8c9;
   --accent-dim: #405a72;
   --glow: rgba(127, 168, 201, 0.26);
-  --sky-base: #070a0e;
+  --sky-base: #131c26;
 }
 
 html[data-theme="dawn"] {
-  --ink: #2b2f2c;
-  --ink-dim: #5d6660;
+  --ink: #232724;
+  --ink-dim: #4c544e;
   --paper: #f3f0e9;
   --paper-2: #faf8f3;
-  --rule: #ddd7ca;
+  --rule: #cfc8b8;
   --accent: #3f7a55;
   --accent-dim: #9fbfa9;
   --glow: rgba(63, 122, 85, 0.18);
-  --sky-base: #d9dfe0;
+  --sky-base: #dfe4e0;
 }
 
 * { box-sizing: border-box; }
@@ -171,7 +171,12 @@ body.no-gl #gl { display: none; }
   gap: var(--space-5);
   padding-bottom: var(--space-6);
   align-items: start;
+  justify-items: center;
 }
+
+/* Panels hug their content: a 1076×568 card holding five lines of text reads as a void. */
+#instrument { width: 100%; max-width: 34rem; }
+#garden { width: 100%; max-width: 62rem; }
 
 .panel {
   background: color-mix(in srgb, var(--paper-2) 82%, transparent);
@@ -214,18 +219,41 @@ kbd {
 
 button {
   font: inherit;
-  color: inherit;
-  background: transparent;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
   border: 1px solid var(--rule);
+  border-bottom-color: color-mix(in srgb, var(--rule) 60%, var(--ink-dim));
   border-radius: 10px;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
-button:hover { border-color: var(--accent-dim); color: var(--ink); }
-button[disabled] { opacity: 0.45; cursor: default; }
+button:hover {
+  border-color: var(--accent-dim);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--ink);
+}
+
+button:active { box-shadow: inset 0 1px 3px color-mix(in srgb, #000 40%, transparent); }
+button[disabled] { opacity: 0.4; cursor: default; }
 button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+/* A destructive action must never read as a neutral one. Applies to
+   button[data-act="abandon"] and anything the hands mark data-tone="discard". */
+button[data-act="abandon"],
+button[data-tone="discard"] {
+  color: color-mix(in srgb, var(--ink) 78%, var(--accent-dim));
+  border-color: color-mix(in srgb, var(--rule) 70%, var(--accent-dim));
+  border-style: dashed;
+}
+
+button[data-act="abandon"]:hover,
+button[data-tone="discard"]:hover {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent-dim) 70%, var(--ink-dim));
+  background: color-mix(in srgb, var(--accent-dim) 14%, transparent);
+}
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 

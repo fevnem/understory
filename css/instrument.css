@@ -1,0 +1,238 @@
+/* css/instrument.css — the session instrument. One accent colour, generous space, numerals
+   first, nothing that jumps. Tokens come from css/shell.css (CONTRACT §11); no raw hex here. */
+
+#instrument { position: relative; }
+
+/* Ground the card in the scene. A dark panel on a dark scene separates by value alone, so it
+   reads as a floating rectangle unless it casts something and pulls the scene back behind it. */
+#instrument {
+  box-shadow:
+    0 34px 90px -26px rgba(0, 0, 0, 0.85),
+    0 8px 26px -10px rgba(0, 0, 0, 0.55);
+}
+#instrument::before {
+  content: '';
+  position: absolute;
+  inset: -14% -20%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(4, 7, 9, 0.5), rgba(4, 7, 9, 0) 74%);
+  filter: blur(16px);
+}
+
+#instrument [hidden] { display: none !important; }
+
+.panes {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+}
+
+/* ---- the dial ---- */
+
+.dial {
+  position: relative;
+  width: min(100%, 20rem);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.ring-track,
+.ring-fill { fill: none; stroke-width: 3.4; }
+
+.ring-track { stroke: color-mix(in srgb, var(--ink-dim) 42%, transparent); }
+
+.ring-fill {
+  stroke: var(--accent);
+  stroke-width: 4.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 9px var(--glow)) drop-shadow(0 0 2px var(--accent));
+  transition: stroke-dashoffset var(--dur-fast) linear;
+}
+
+.dial-mid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.phase {
+  margin: 0;
+  font-size: var(--step-0);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: color var(--dur-slow) var(--ease);
+}
+.phase[data-state="growing"] { color: var(--accent); }
+.phase[data-state="paused"] { color: var(--accent-dim); }
+
+.readout {
+  margin: 0;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 300;
+  font-size: clamp(2.6rem, 14vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.species,
+.grace {
+  margin: 0;
+  min-height: 1.15em;
+  font-size: var(--step-0);
+  line-height: 1.3;
+  text-align: center;
+}
+.species { color: var(--ink-dim); letter-spacing: 0.02em; }
+.grace { color: var(--accent-dim); }
+
+/* ---- controls ---- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.ctl {
+  letter-spacing: 0.04em;
+  min-width: 6.5rem;
+  min-height: 44px;
+}
+
+[data-act="sow"] { border-color: var(--accent-dim); color: var(--accent); }
+[data-act="sow"]:hover { border-color: var(--accent); }
+
+/* ---- task line ---- */
+
+.taskline {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  max-width: 26rem;
+  margin-top: var(--space-1);
+}
+
+.task-cap {
+  font-size: var(--step-0);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 72%, var(--ink-dim));
+}
+
+.task-input {
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--space-1) 0;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.task-input:focus { border-bottom-color: var(--accent-dim); }
+.task-input:focus-visible { outline: none; }
+
+/* ---- trays ---- */
+
+.trays {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.trays .ctl {
+  min-width: 0;
+  min-height: 44px;
+  color: color-mix(in srgb, var(--ink) 74%, var(--ink-dim));
+  border-color: transparent;
+  padding: var(--space-1) var(--space-2);
+  letter-spacing: 0.06em;
+}
+.trays .ctl:hover { color: var(--ink); border-color: var(--rule); }
+.trays .ctl[aria-expanded="true"] { color: var(--accent); border-color: var(--accent-dim); }
+
+.tray {
+  width: 100%;
+  max-width: 30rem;
+  justify-self: stretch;
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  text-align: left;
+}
+
+/* ---- durations row ---- */
+
+.dur-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: var(--space-3);
+}
+
+.field { display: grid; gap: var(--space-1); }
+
+.field > span {
+  font-size: var(--step-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 90%, var(--ink-dim));
+}
+
+.field input {
+  text-align: center;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* the placeholder is a real instruction, not decoration — it has to be readable */
+.field input::placeholder {
+  color: color-mix(in srgb, var(--ink) 62%, var(--ink-dim));
+  opacity: 1;
+}
+
+/* ---- sound sliders ---- */
+
+.snd-row {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.snd-row > span {
+  font-size: var(--step-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 72%, var(--ink-dim));
+}
+
+/* ---- narrow screens ---- */
+
+@media (max-width: 560px) {
+  .controls .ctl { min-width: 0; }
+  .snd-row { grid-template-columns: 4.75rem minmax(0, 1fr); }
+  .readout { letter-spacing: 0; }
+}

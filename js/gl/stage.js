@@ -141,6 +141,28 @@ uniform sampler2D u_scene;
 out vec4 fragColor;
 void main() { fragColor = vec4(texture(u_scene, v_uv).rgb, 1.0); }`;
 
+// Built-in fallback sky. Drawn only while nothing has claimed the 'sky' layer, so the app is
+// never a black void: dark at the top, a lighter band at the horizon, a soft glow on it, and
+// darker ground below. A real forest module simply takes the layer over and this stops drawing.
+const SKY_FS = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 fragColor;
+uniform vec3 u_top;
+uniform vec3 u_horizon;
+uniform vec3 u_ground;
+uniform vec3 u_glow;
+uniform float u_amount;
+uniform float u_h;
+void main() {
+  float y = v_uv.y;
+  float above = clamp((y - u_h) / max(0.001, 1.0 - u_h), 0.0, 1.0);
+  vec3 sky = mix(u_horizon, u_top, pow(above, 0.75));
+  vec3 col = mix(u_ground, sky, smoothstep(u_h - 0.008, u_h + 0.008, y));
+  col += u_glow * exp(-pow((y - u_h) * 11.0, 2.0)) * u_amount;
+  fragColor = vec4(col, 1.0);
+}`;
+
 export function createStage(opts) {
   const canvas = opts.canvas;
   const gl = canvas.getContext('webgl2', {
@@ -268,6 +290,7 @@ export function createStage(opts) {
     if (geometry.indices) {
       indexBuf = buffer(geometry.indices, { target: gl.ELEMENT_ARRAY_BUFFER, size: 1 });
       indexCount = geometry.indices.length;
+      parts.indices = indexBuf;
     }
     gl.bindVertexArray(null);
     return {
@@ -294,21 +317,41 @@ export function createStage(opts) {
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     if (base.normals) { gl.bindBuffer(gl.ARRAY_BUFFER, base.normals.buf); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0); }
     if (base.uvs) { gl.bindBuffer(gl.ARRAY_BUFFER, base.uvs.buf); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0); }
+    // The element array binding is part of VAO state: an instanced VAO that never binds it
+    // draws nothing at all (silently — the draw call still "happens").
+    if (base.indices) gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, base.indices.buf);
     const list = attrs || [];
+    const store = new Map();
     for (const at of list) {
       const loc = at.location !== undefined ? at.location : null;
       const p = at.program || null;
       const attrLoc = p ? p.locationOf(at.name) : loc;
       if (attrLoc === null || attrLoc === undefined || attrLoc < 0) continue;
-      const b = buffer(at.data, { size: at.size || 1 });
+      const b = buffer(at.data, { size: at.size || 1, usage: gl.DYNAMIC_DRAW });
+      store.set(at.name, { buf: b.buf, size: at.size || 1 });
       gl.enableVertexAttribArray(attrLoc);
       gl.vertexAttribPointer(attrLoc, at.size || 1, at.type || gl.FLOAT, !!at.normalized, at.stride || 0, at.offset || 0);
       gl.vertexAttribDivisor(attrLoc, 1);
-      if (!at.keep) b.keep = true;
     }
     gl.bindVertexArray(null);
     return {
       vao, count,
+      /** Rewrite one instance attribute in place (no new buffers — safe to call every frame). */
+      update(name, data) {
+        const slot = store.get(name);
+        if (!slot) return false;
+        gl.bindVertexArray(vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, slot.buf);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
+        gl.bindVertexArray(null);
+        return true;
+      },
+      /** Free the GPU buffers — call before rebuilding a dynamically sized instanced mesh. */
+      release() {
+        for (const slot of store.values()) gl.deleteBuffer(slot.buf);
+        gl.deleteVertexArray(vao);
+        store.clear();
+      },
       draw(p) {
         if (p) p.use();
         // divisor attributes must be re-pointed per program only if locations differ;
@@ -411,6 +454,37 @@ export function createStage(opts) {
   const presentProg = program(PRESENT_VS, PRESENT_FS);
   const fullQuad = quad();
 
+  /* ---- fallback sky (see SKY_FS) ---- */
+
+  function tokenRGB(name, fallback) {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const m = raw.match(/^#([0-9a-f]{6})$/i);
+    if (!m) return fallback;
+    const v = parseInt(m[1], 16);
+    return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+  }
+  const skyProg = program(PRESENT_VS, SKY_FS);
+  const skyColors = {
+    base: tokenRGB('--sky-base', [0.043, 0.067, 0.078]),
+    accent: tokenRGB('--accent', [0.56, 0.72, 0.60])
+  };
+  function skyPalette() {
+    const b = skyColors.base;
+    const a = skyColors.accent;
+    return {
+      top: [b[0] * 0.72, b[1] * 0.78, b[2] * 0.9],
+      horizon: [b[0] * 1.9 + a[0] * 0.22, b[1] * 1.85 + a[1] * 0.2, b[2] * 1.8 + a[2] * 0.16],
+      ground: [b[0] * 0.42, b[1] * 0.44, b[2] * 0.48],
+      glow: [a[0] * 0.3, a[1] * 0.28, a[2] * 0.24]
+    };
+  }
+
+  /** Re-read the theme tokens (call after the theme changes). */
+  function refreshSky() {
+    skyColors.base = tokenRGB('--sky-base', skyColors.base);
+    skyColors.accent = tokenRGB('--accent', skyColors.accent);
+  }
+
   /* ---- frame ---- */
 
   const stage = {
@@ -419,6 +493,7 @@ export function createStage(opts) {
     width: 1, height: 1, dpr,
     get contextLost() { return lost; },
     program, buffer, mesh, instances, quad, texture, framebuffer,
+    refreshSky,
     layer(name) { return layerMap.get(name) || null; },
     onPresent(fn) { presentHook = fn; return true; },
     uniform(api, name, value) { return api.u(name, value); },
@@ -459,6 +534,25 @@ export function createStage(opts) {
 
       if (target) { target.bind(); this.clear(); }
       else { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, this.width, this.height); this.clear(); }
+
+      // Nothing has claimed the 'sky' layer (no forest module, or it has not loaded): draw the
+      // built-in gradient so the scene still reads as a sky over ground rather than black.
+      const skyBucket = layerMap.get('sky');
+      if (this.skyFallback !== false && skyBucket && skyBucket.objects.length === 0) {
+        const p = skyPalette();
+        gl.disable(gl.DEPTH_TEST);
+        gl.depthMask(false);
+        skyProg.use();
+        skyProg.u('u_top', p.top);
+        skyProg.u('u_horizon', p.horizon);
+        skyProg.u('u_ground', p.ground);
+        skyProg.u('u_glow', p.glow);
+        skyProg.u('u_amount', 1);
+        skyProg.u('u_h', 0.42);
+        fullQuad.draw(skyProg);
+        gl.depthMask(true);
+        gl.enable(gl.DEPTH_TEST);
+      }
 
       for (const name of LAYERS) {
         const bucket = layerMap.get(name);

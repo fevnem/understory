@@ -1,0 +1,214 @@
+/* css/garden.css — the garden view: totals, the calendar heatmap, the species ledger and
+   the list of finished trees. Tokens only (CONTRACT §11): no raw hex, no invented colours.
+   No keyframe animations here — the record is still, and reduced motion must find nothing
+   moving. Tints are all color-mix() over --paper-2 / --accent / --rule. */
+
+.garden-grid { min-width: 0; }
+
+.garden-title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--step-2);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ---- totals (a record, read at a glance) ---- */
+
+.garden-tallies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: 0 0 var(--space-5);
+}
+
+.garden-tally { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.garden-tally-value { font-size: var(--step-3); line-height: 1.05; }
+
+.garden-tally-label {
+  font-size: var(--step-0);
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+}
+
+/* ---- blocks ---- */
+
+.garden-block { margin-top: var(--space-5); }
+.garden-block--days { margin-top: 0; }
+.garden-block h3 { margin: 0 0 var(--space-1); }
+
+.garden-caption {
+  margin: 0 0 var(--space-3);
+  font-size: var(--step-0);
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+}
+
+/* ---- the day calendar ---- */
+
+.garden-heat {
+  --cell: 0.6875rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, var(--cell));
+  grid-auto-columns: var(--cell);
+  gap: 3px;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.garden-day {
+  border-radius: 2.5px;
+  background: color-mix(in srgb, var(--rule) 42%, transparent);
+}
+
+.garden-day[data-level="1"] { background: color-mix(in srgb, var(--accent-dim) 34%, var(--paper-2)); }
+.garden-day[data-level="2"] { background: color-mix(in srgb, var(--accent-dim) 62%, var(--paper-2)); }
+.garden-day[data-level="3"] { background: color-mix(in srgb, var(--accent) 58%, var(--paper-2)); }
+.garden-day[data-level="4"] { background: var(--accent); }
+
+.garden-day--today { box-shadow: 0 0 0 1.5px var(--ink); }
+
+.garden-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-2);
+  font-size: var(--step-0);
+  color: var(--ink-dim);
+}
+
+.garden-legend-cap { margin: 0 var(--space-1); letter-spacing: 0.04em; }
+
+.garden-swatch { width: 0.6rem; height: 0.6rem; border-radius: 2px; display: inline-block; }
+.garden-swatch[data-level="0"] { background: color-mix(in srgb, var(--rule) 42%, transparent); }
+.garden-swatch[data-level="1"] { background: color-mix(in srgb, var(--accent-dim) 34%, var(--paper-2)); }
+.garden-swatch[data-level="2"] { background: color-mix(in srgb, var(--accent-dim) 62%, var(--paper-2)); }
+.garden-swatch[data-level="3"] { background: color-mix(in srgb, var(--accent) 58%, var(--paper-2)); }
+.garden-swatch[data-level="4"] { background: var(--accent); }
+
+/* ---- the species ledger ---- */
+
+.garden-ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--space-2) var(--space-3);
+}
+
+.garden-species {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--paper) 38%, transparent);
+  opacity: 0.66;
+}
+
+.garden-species--present {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent-dim) 55%, var(--rule));
+}
+
+.garden-species-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.garden-species-name { font-size: var(--step-1); }
+
+.garden-species-latin {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+}
+
+.garden-species-note {
+  margin-top: 2px;
+  font-size: var(--step-0);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ink-dim) 88%, transparent);
+}
+
+.garden-species-count {
+  font-size: var(--step-1);
+  color: var(--ink-dim);
+  text-align: right;
+  min-width: 1.4em;
+}
+
+.garden-species--present .garden-species-count { color: var(--ink); }
+
+/* ---- silhouettes (drawn, never fetched) ---- */
+
+.garden-sil { display: block; color: var(--ink-dim); }
+.garden-sil > * { fill: currentColor; }
+
+.garden-sil--card { width: 2.25rem; height: 3rem; }
+.garden-sil--row { width: 1.3rem; height: 1.75rem; flex: none; }
+
+.garden-species--present .garden-sil { color: var(--accent); }
+
+/* ---- the finished trees, wilted ones included ---- */
+
+.garden-trees { display: flex; flex-direction: column; }
+
+.garden-tree {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.garden-trees .garden-tree:first-child { border-top: 0; }
+
+.garden-tree-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.garden-tree-name { font-size: var(--step-1); }
+
+.garden-tree-when { font-size: var(--step-0); letter-spacing: 0.02em; }
+
+.garden-tree-min { font-size: var(--step-0); }
+
+.garden-tree-outcome {
+  font-size: var(--step-0);
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  opacity: 0.66;
+}
+
+/* Honest, not hidden: a wilted tree keeps its name and its place. */
+.garden-tree[data-outcome="wilted"] .garden-tree-name { color: var(--ink-dim); }
+.garden-tree[data-outcome="wilted"] .garden-sil { color: color-mix(in srgb, var(--ink-dim) 68%, transparent); }
+.garden-tree[data-outcome="wilted"] .garden-tree-outcome { color: var(--ink-dim); }
+
+.garden-empty {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-dim);
+  font-size: var(--step-1);
+}
+
+.garden-more {
+  margin: var(--space-3) 0 0;
+  font-size: var(--step-0);
+  color: var(--ink-dim);
+}
+
+/* ---- narrow screens: the record shrinks, it never scrolls sideways ---- */
+
+@media (max-width: 560px) {
+  .garden-tallies { gap: var(--space-3) var(--space-5); }
+  .garden-tally-value { font-size: var(--step-2); }
+  .garden-ledger { grid-template-columns: minmax(0, 1fr); }
+  .garden-species-note { display: none; }
+}
