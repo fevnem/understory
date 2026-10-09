@@ -242,7 +242,8 @@ export function create(ctx) {
       meta.appendChild(el('span', 'garden-species-latin', sp.latin));
       meta.appendChild(el('span', 'garden-species-note', sp.note));
       card.appendChild(meta);
-      card.appendChild(el('span', 'garden-species-count num', n > 0 ? String(n) : '—'));
+      card.appendChild(el('span', 'garden-species-count num', n > 0 ? String(n) : '0'));
+      card.setAttribute('aria-label', sp.name + ': ' + n + ' grown');
       ledger.appendChild(card);
     }
   }

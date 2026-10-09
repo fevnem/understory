@@ -10,15 +10,6 @@
     0 34px 90px -26px rgba(0, 0, 0, 0.85),
     0 8px 26px -10px rgba(0, 0, 0, 0.55);
 }
-#instrument::before {
-  content: '';
-  position: absolute;
-  inset: -14% -20%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(closest-side, rgba(4, 7, 9, 0.5), rgba(4, 7, 9, 0) 74%);
-  filter: blur(16px);
-}
 
 #instrument [hidden] { display: none !important; }
 

@@ -49,8 +49,8 @@ void main() {
   float nearness = clamp(1.0 - (dist - 4.0) / 22.0, 0.0, 1.0);
   // Depth-graded: near drops are wide, soft and faint; far ones thin and fainter. Uniform
   // hard-edged streaks read as scratches on the lens rather than rain.
-  v_alpha = a_var.y * mix(0.09, 0.72, nearness);
-  v_soft = mix(0.5, 0.97, nearness);
+  v_alpha = a_var.y * mix(0.04, 0.3, nearness);
+  v_soft = mix(0.55, 0.98, nearness);
   v_side = a_position.x;
   v_t = a_position.y;
 }`;
@@ -231,7 +231,7 @@ export function create(ctx) {
   }
 
   const high = ctx.quality === 'high';
-  const DROPS = high ? 1500 : 480;
+  const DROPS = high ? 420 : 240;
   const FOG = high ? 10 : 5;
   const SHAFTS = high ? 3 : 2;
   const MOTES = high ? 96 : 40;

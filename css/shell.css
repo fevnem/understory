@@ -11,7 +11,7 @@
   --accent: #8fb89a;
   --accent-dim: #4d6b57;
   --glow: rgba(143, 184, 154, 0.28);
-  --sky-base: #1c2732;
+  --sky-base: #121a2e;
 
   --font-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
   --font-num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -46,7 +46,7 @@ html[data-theme="night"] {
   --accent: #7fa8c9;
   --accent-dim: #405a72;
   --glow: rgba(127, 168, 201, 0.26);
-  --sky-base: #131c26;
+  --sky-base: #080c17;
 }
 
 html[data-theme="dawn"] {
@@ -58,7 +58,7 @@ html[data-theme="dawn"] {
   --accent: #3f7a55;
   --accent-dim: #9fbfa9;
   --glow: rgba(63, 122, 85, 0.18);
-  --sky-base: #dfe4e0;
+  --sky-base: #99a7c0;
 }
 
 * { box-sizing: border-box; }
@@ -179,7 +179,9 @@ body.no-gl #gl { display: none; }
 #garden { width: 100%; max-width: 62rem; }
 
 .panel {
-  background: color-mix(in srgb, var(--paper-2) 82%, transparent);
+  /* Opaque, not glass: at 94% the rain streaks and firefly motes still showed through as small
+     bright marks that read as artefacts on top of the numerals and the heatmap. */
+  background: var(--paper-2);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   padding: clamp(1.1rem, 3vw, 2rem);

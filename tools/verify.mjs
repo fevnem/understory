@@ -322,7 +322,18 @@ const harvested = await cdp.eval(`(async () => {
   const u = window.__understory;
   u.store.state.settings.focus = 0.02;   // 1.2s, so the gate does not wait a minute
   u.timer.beginFocus();
-  await new Promise((r) => setTimeout(r, 2600));
+  // The frame loop on a software rasteriser can be starved for seconds at a time, so poll for the
+  // session to actually settle instead of trusting a single sleep — otherwise this step fails
+  // intermittently and takes the break checks down with it.
+  const t0 = Date.now();
+  const settled = () => {
+    const f = u.store.state.forest;
+    const last = f[f.length - 1];
+    return !!(last && last.outcome && last.outcome !== 'growing');
+  };
+  while (Date.now() - t0 < 25000 && !settled()) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
   const f = u.store.state.forest;
   const last = f[f.length - 1];
   return {
@@ -330,10 +341,11 @@ const harvested = await cdp.eval(`(async () => {
     minutes: last ? last.minutes : 0,
     today: u.store.derived().today.focusMinutes,
     harvested: u.store.derived().today.harvested,
-    streak: u.store.derived().streak
+    streak: u.store.derived().streak,
+    waited: Date.now() - t0
   };
 })()`);
-check('finishing a focus session harvests the tree', harvested.outcome === 'harvested' || harvested.outcome === 'wild' || harvested.outcome === 'distracted', String(harvested.outcome));
+check('finishing a focus session harvests the tree', harvested.outcome === 'harvested' || harvested.outcome === 'wild' || harvested.outcome === 'distracted', String(harvested.outcome) + ' after ' + harvested.waited + 'ms');
 check('the day records focus minutes', harvested.today > 0, String(harvested.today));
 check('today counts a harvested tree', harvested.harvested >= 1, String(harvested.harvested));
 
