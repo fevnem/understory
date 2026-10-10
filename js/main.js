@@ -344,7 +344,10 @@ export async function boot() {
   bus.on('phase:change', paintTitle);
 
   resize();
-  setView(store.state.settings.view || 'forest', true);
+  // Always open on the timer, never on the last-viewed screen. Restoring the view meant the app
+  // could boot straight into the forest, where pressing "Forest" correctly does nothing — a dead
+  // click from the user's side. The timer is home; the forest is somewhere you go.
+  setView('forest', true);
   timer.restore();
   paintTotals();
 
