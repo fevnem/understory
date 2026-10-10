@@ -177,7 +177,7 @@ export function create(ctx) {
       far: p.far, mid: p.mid, line: p.line, hill: p.hill,
       // the framing foliage is the nearest thing to the camera, but pure black reads as a hole in
       // the screen rather than as a plant — keep a trace of the layer behind it
-      frame: mix3(p.line, [0, 0, 0], 0.62)
+      frame: mix3(p.line, [0, 0, 0], 0.5)
     };
   }
 
@@ -357,16 +357,18 @@ export function create(ctx) {
     const state = ctx.timer.state;
     const wilted = state === 'wilted';
     const holding = state === 'paused';
-    // Standing in the open ground to the right of the card, so it is never hidden by the UI.
-    const x = 0.46;
-    const grow = wilted ? 0.66 : 0.24 + progress * 0.6;
+    // Standing in the open ground to the right of the card, so it is never hidden by the UI — and
+    // it has to be the biggest living thing in the frame, or the promise ("plant a tree") is
+    // carried by a timer ring instead of by a tree.
+    const x = 0.44;
+    const grow = wilted ? 0.7 : 0.34 + progress * 0.74;
     const height = grow * (sp.height || 1);
     let color = wilted
       ? mix3(hsl2rgb(32, 0.08, 0.26), [0.32, 0.3, 0.28], 0.55)
-      : hsl2rgb(sp.hue, holding ? 0.16 : 0.3, holding ? 0.24 : 0.27);
+      : hsl2rgb(sp.hue, holding ? 0.18 : 0.34, holding ? 0.26 : 0.3);
     // the tree you are growing catches the light, so it reads as painted rather than as one more
     // silhouette — but only a little, or it floats off the scene
-    color = mix3(color, pal().glow, wilted ? 0.06 : 0.12);
+    color = mix3(color, pal().glow, wilted ? 0.06 : 0.15);
     return {
       habit, progress, wilted, holding, x,
       base: groundAt(x) - 0.02,

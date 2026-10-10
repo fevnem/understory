@@ -259,11 +259,13 @@ export function frameMesh(seed, side) {
   const n = 4;
   for (let i = 0; i < n; i += 1) {
     const f = i / (n - 1);
+    // Corners, not cliffs: these were reading as huge black masses that swallowed the frame and
+    // competed with the tree you are actually growing. Keep them low, smaller and further out.
     blobs.push({
-      x: s * (0.94 + rnd() * 0.28),
-      y: -0.95 + f * 0.62 + rnd() * 0.08,
-      r: 0.19 + rnd() * 0.13,
-      ry: 0.2 + rnd() * 0.16,
+      x: s * (1.04 + rnd() * 0.24),
+      y: -1.02 + f * 0.44 + rnd() * 0.06,
+      r: 0.15 + rnd() * 0.1,
+      ry: 0.17 + rnd() * 0.12,
       rot: s * (0.25 + rnd() * 0.5)
     });
   }
