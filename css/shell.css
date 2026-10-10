@@ -1,5 +1,5 @@
-/* css/shell.css — the manager's stylesheet: tokens, the paper-and-dark-room layout, the
-   CSS-only fallback ambience, and the shared component shapes hands build inside.
+/* css/shell.css — the manager's stylesheet: tokens, the layout, the masthead and its navigation,
+   the CSS-only fallback ambience, and the shared component shapes hands build inside.
    Hands add css/instrument.css and css/garden.css only. Tokens are frozen (CONTRACT §11). */
 
 :root {
@@ -7,7 +7,9 @@
   --ink-dim: #a3adaa;
   --paper: #12161a;
   --paper-2: #1e252c;
+  --paper-3: #252d35;
   --rule: #3b444c;
+  --rule-soft: #2a323a;
   --accent: #8fb89a;
   --accent-dim: #4d6b57;
   --glow: rgba(143, 184, 154, 0.28);
@@ -30,11 +32,16 @@
   --space-5: 2.25rem;
   --space-6: 3.5rem;
 
-  --radius: 14px;
+  --radius: 16px;
+  --radius-sm: 11px;
   --dur-fast: 160ms;
   --dur-slow: 900ms;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --shell-pad: clamp(1rem, 4vw, 3.25rem);
+  --tap: 44px;
+  --shadow-panel: 0 1px 0 color-mix(in srgb, var(--ink) 5%, transparent) inset,
+                  0 30px 70px -46px color-mix(in srgb, #000 80%, transparent),
+                  0 6px 20px -14px color-mix(in srgb, #000 60%, transparent);
 }
 
 html[data-theme="night"] {
@@ -42,7 +49,9 @@ html[data-theme="night"] {
   --ink-dim: #98a4ae;
   --paper: #0d1013;
   --paper-2: #151b22;
+  --paper-3: #1c242c;
   --rule: #2c343d;
+  --rule-soft: #1f262e;
   --accent: #7fa8c9;
   --accent-dim: #405a72;
   --glow: rgba(127, 168, 201, 0.26);
@@ -54,7 +63,9 @@ html[data-theme="dawn"] {
   --ink-dim: #4c544e;
   --paper: #f3f0e9;
   --paper-2: #faf8f3;
+  --paper-3: #ffffff;
   --rule: #cfc8b8;
+  --rule-soft: #e2dbcd;
   --accent: #3f7a55;
   --accent-dim: #9fbfa9;
   --glow: rgba(63, 122, 85, 0.18);
@@ -127,23 +138,35 @@ body.no-gl #gl { display: none; }
   to { transform: translate3d(0, 0, 0); }
 }
 
-/* ---- page furniture ---- */
+/* ---- the masthead: the one bar that stays put ----
+   It carries the only navigation in the app, so it has to be reachable from every screen of a long
+   scrolling page. Sticky, translucent, with the seam only showing once the page has moved. */
 
-.masthead, #ui, .colophon {
-  position: relative;
-  z-index: 2;
-  padding-inline: var(--shell-pad);
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "brand nav" "note note";
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4) var(--shell-pad);
   max-width: 1180px;
   margin-inline: auto;
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(115%);
+  border-bottom: 1px solid color-mix(in srgb, var(--rule-soft) 70%, transparent);
 }
 
-.masthead { padding-top: clamp(2rem, 7vh, 5rem); padding-bottom: var(--space-4); }
+.brand { grid-area: brand; min-width: 0; }
 
 .wordmark {
   font-size: var(--step-3);
   font-weight: 500;
   letter-spacing: 0.01em;
   margin: 0;
+  line-height: 1.15;
 }
 
 .thesis {
@@ -153,7 +176,8 @@ body.no-gl #gl { display: none; }
 }
 
 .masthead-note {
-  margin: var(--space-3) 0 0;
+  grid-area: note;
+  margin: 0;
   font-family: var(--font-num);
   font-size: var(--step-0);
   letter-spacing: 0.04em;
@@ -161,32 +185,84 @@ body.no-gl #gl { display: none; }
 }
 
 .masthead-warn {
-  margin: var(--space-2) 0 0;
+  grid-area: note;
+  margin: 0;
   font-size: var(--step-0);
   color: var(--accent-dim);
+}
+
+/* ---- navigation ---- */
+
+.viewnav {
+  grid-area: nav;
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+}
+
+.viewnav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-size: var(--step-0);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.viewnav-glyph { font-size: 1.05em; line-height: 1; }
+
+.viewnav-btn:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.viewnav-btn[aria-pressed="true"] {
+  color: color-mix(in srgb, var(--paper) 88%, #000);
+  background: var(--accent);
+  box-shadow: 0 2px 10px -6px var(--glow);
+}
+
+html[data-theme="dawn"] .viewnav-btn[aria-pressed="true"] { color: #fff; }
+
+/* ---- page furniture ---- */
+
+#ui, .colophon {
+  position: relative;
+  z-index: 2;
+  padding-inline: var(--shell-pad);
+  max-width: 1180px;
+  margin-inline: auto;
 }
 
 #ui {
   display: grid;
   gap: var(--space-5);
+  padding-top: var(--space-5);
   padding-bottom: var(--space-6);
   align-items: start;
   justify-items: center;
 }
 
 /* Panels hug their content: a 1076×568 card holding five lines of text reads as a void. */
-#instrument { width: 100%; max-width: 34rem; }
-#garden { width: 100%; max-width: 62rem; }
+#instrument { width: 100%; max-width: 36rem; }
+#garden { width: 100%; max-width: 68rem; }
 
 .panel {
   /* Opaque, not glass: at 94% the rain streaks and firefly motes still showed through as small
      bright marks that read as artefacts on top of the numerals and the heatmap. */
   background: var(--paper-2);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-soft);
   border-radius: var(--radius);
-  padding: clamp(1.1rem, 3vw, 2rem);
-  backdrop-filter: blur(14px) saturate(120%);
-  box-shadow: 0 24px 60px -40px color-mix(in srgb, #000 70%, transparent);
+  padding: clamp(1.15rem, 4vw, 2.1rem);
+  box-shadow: var(--shadow-panel);
 }
 
 .panel[hidden] { display: none; }
@@ -197,7 +273,7 @@ body.no-gl #gl { display: none; }
   gap: var(--space-3) var(--space-5);
   padding-top: var(--space-4);
   padding-bottom: var(--space-5);
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--rule-soft);
   color: var(--ink-dim);
   font-size: var(--step-0);
 }
@@ -217,6 +293,32 @@ kbd {
 
 .noscript { padding: var(--space-4); color: var(--ink-dim); }
 
+/* ---- the keyboard sheet ---- */
+
+.keysheet {
+  width: min(24rem, calc(100vw - 2rem));
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  color: var(--ink);
+  padding: var(--space-5);
+  box-shadow: 0 40px 90px -40px #000;
+}
+
+.keysheet::backdrop { background: color-mix(in srgb, #000 62%, transparent); backdrop-filter: blur(3px); }
+
+.keysheet h2 { margin-bottom: var(--space-4); }
+
+.keysheet-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-5);
+}
+
+.keysheet-list dt { text-align: right; }
+.keysheet-list dd { margin: 0; color: var(--ink-dim); font-size: var(--step-0); }
+
 /* ---- shared shapes hands build inside (do not restyle globally) ---- */
 
 button {
@@ -225,7 +327,8 @@ button {
   background: color-mix(in srgb, var(--paper) 72%, transparent);
   border: 1px solid var(--rule);
   border-bottom-color: color-mix(in srgb, var(--rule) 60%, var(--ink-dim));
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
+  min-height: var(--tap);
   padding: var(--space-2) var(--space-4);
   cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
@@ -264,14 +367,15 @@ input, textarea {
   color: inherit;
   background: color-mix(in srgb, var(--paper) 70%, transparent);
   border: 1px solid var(--rule);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
+  min-height: var(--tap);
   padding: var(--space-2) var(--space-3);
   width: 100%;
 }
 
 input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--ink-dim) 75%, transparent); }
 
-input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--accent); width: 100%; }
+input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--accent); width: 100%; min-height: 0; }
 
 h2, h3 { font-weight: 500; margin: 0 0 var(--space-2); }
 h2 { font-size: var(--step-2); }
@@ -279,22 +383,40 @@ h3 { font-size: var(--step-1); color: var(--ink-dim); letter-spacing: 0.06em; te
 
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 .dim { color: var(--ink-dim); }
-.rule { border: 0; border-top: 1px solid var(--rule); margin: var(--space-4) 0; }
+.rule { border: 0; border-top: 1px solid var(--rule-soft); margin: var(--space-4) 0; }
 
-/* ---- view switching (body[data-view]) ---- */
-
-body[data-view="garden"] .masthead { padding-bottom: var(--space-2); }
-
-/* ---- narrow screens ---- */
+/* ---- narrow screens ----
+   Phones are the common case for a study timer, not an afterthought: the nav goes full width and
+   the panels breathe instead of being squeezed into two columns. */
 
 @media (max-width: 900px) {
-  #ui { gap: var(--space-4); }
-  .panel { backdrop-filter: blur(10px); }
+  #ui { gap: var(--space-4); padding-top: var(--space-4); }
 }
 
-@media (max-width: 560px) {
-  :root { --step-4: 1.75rem; --step-5: 2.4rem; }
-  .colophon { font-size: 0.75rem; }
+@media (max-width: 680px) {
+  :root {
+    --shell-pad: 1.05rem;
+    --step-4: 1.9rem;
+    --step-5: 2.6rem;
+  }
+
+  .masthead {
+    position: static;
+    grid-template-columns: 1fr;
+    grid-template-areas: "brand" "nav" "note";
+    gap: var(--space-3);
+    padding: var(--space-4) var(--shell-pad) var(--space-3);
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom: 0;
+  }
+
+  .viewnav { width: 100%; }
+  .viewnav-btn { flex: 1; justify-content: center; min-height: var(--tap); }
+
+  .panel { border-radius: var(--radius); padding: var(--space-4); }
+
+  .colophon { font-size: 0.75rem; gap: var(--space-2) var(--space-4); }
   .colophon-keys { display: none; }
 }
 

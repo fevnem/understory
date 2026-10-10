@@ -60,6 +60,7 @@ export async function boot() {
     root: document.getElementById('ui'),
     instrument: document.getElementById('instrument'),
     garden: document.getElementById('garden'),
+    nav: document.querySelector('.viewnav'),
     atmos: document.getElementById('atmos'),
     masthead: document.querySelector('.masthead'),
     totals: document.querySelector('[data-role="totals"]'),
@@ -145,8 +146,32 @@ export async function boot() {
     if (dom.garden) dom.garden.hidden = v !== 'garden';
     if (dom.instrument) dom.instrument.hidden = v === 'garden';
     if (!silent) { store.save(); bus.emit('view:changed', { view: v }); }
+    syncViewNav(v);
     return v;
   }
+
+  // The masthead nav is the one control that survives every view, so it must never disagree with
+  // the actual view. aria-pressed is the state; CSS paints it.
+  function syncViewNav(v) {
+    const btns = document.querySelectorAll('[data-view-btn]');
+    for (let i = 0; i < btns.length; i += 1) {
+      const on = btns[i].getAttribute('data-view-btn') === v;
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on) btns[i].setAttribute('aria-current', 'page');
+      else btns[i].removeAttribute('aria-current');
+    }
+    if (dom.nav) dom.nav.setAttribute('data-active', v);
+  }
+
+  (function wireViewNav() {
+    const btns = document.querySelectorAll('[data-view-btn]');
+    for (let i = 0; i < btns.length; i += 1) {
+      btns[i].addEventListener('click', function () {
+        setView(this.getAttribute('data-view-btn'));
+        if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+      });
+    }
+  })();
 
   /* ---------------- totals in the masthead ---------------- */
 
@@ -195,7 +220,15 @@ export async function boot() {
     else if (k === 's' || k === 'S') { timer.skip(); }
     else if (k === 'g' || k === 'G') { setView(store.state.settings.view === 'garden' ? 'forest' : 'garden'); }
     else if (k === 'm' || k === 'M') { toggleMute(); }
-    else return;
+    else if (k === 't' || k === 'T') { setView('forest'); }
+    else if (k === 'Escape') {
+      const sheet = document.querySelector('[data-role="keysheet"]');
+      if (sheet && sheet.open) { sheet.close(); return; }
+      setView('forest');
+    } else if (k === '?') {
+      const sheet = document.querySelector('[data-role="keysheet"]');
+      if (sheet) { if (sheet.open) sheet.close(); else if (typeof sheet.showModal === 'function') sheet.showModal(); else sheet.setAttribute('open', ''); }
+    } else return;
     paintTotals();
   }, { passive: false });
 
@@ -257,9 +290,58 @@ export async function boot() {
     requestAnimationFrame(loop);
   }
 
-  bus.on('session:harvest', paintTotals);
-  bus.on('session:wilt', paintTotals);
   bus.on('forest:changed', paintTotals);
+
+  /* ---------------- the tab title, and one honest notification ---------------- */
+
+  // A study timer is useless if you have to keep looking at it. The tab carries the countdown, and
+  // when the session ends while the tab is in the background we say so once — no permission is
+  // requested until the user has actually touched the page, so a cold visit is never prompted at.
+  const BASE_TITLE = document.title;
+  let lastTitle = '';
+  let notifAsked = false;
+
+  function paintTitle() {
+    const st = timer.state;
+    let t = BASE_TITLE;
+    if (st === 'growing' || st === 'paused' || st === 'break') {
+      const secs = Math.max(0, Math.ceil((timer.remaining || 0) / 1000));
+      const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+      const ss = String(secs % 60).padStart(2, '0');
+      const mark = st === 'paused' ? '❚❚ ' : st === 'break' ? '· ' : '';
+      t = mark + mm + ':' + ss + ' · ' + (timer.phase === 'long' ? 'long rest' : timer.phase === 'short' ? 'rest' : 'growing');
+    }
+    if (t !== lastTitle) { lastTitle = t; document.title = t; }
+  }
+
+  function askNotify() {
+    if (notifAsked) return;
+    notifAsked = true;
+    try {
+      if (typeof Notification === 'function' && Notification.permission === 'default') Notification.requestPermission().catch(function () {});
+    } catch (err) { /* older browsers: no notifications, everything else still works */ }
+  }
+  window.addEventListener('pointerdown', askNotify, { once: true, passive: true });
+
+  function notifyEnd(kind) {
+    try {
+      if (typeof Notification !== 'function' || Notification.permission !== 'granted') return;
+      if (!document.hidden) return;
+      const tree = timer.tree;
+      const sp = tree && (ctx.species || []).find(function (s) { return s.id === tree.species; });
+      const name = sp ? sp.name : 'A tree';
+      const body = kind === 'harvest'
+        ? name + ' is planted. Time for a rest.'
+        : 'Your tree wilted while you were away.';
+      const n = new Notification('Understory', { body: body, tag: 'understory-session', silent: false });
+      setTimeout(function () { try { n.close(); } catch (err) {} }, 12000);
+    } catch (err) { /* notification is a courtesy, never a dependency */ }
+  }
+
+  bus.on('session:harvest', function () { paintTotals(); notifyEnd('harvest'); });
+  bus.on('session:wilt', function () { paintTotals(); notifyEnd('wilt'); });
+  bus.on('session:tick', paintTitle);
+  bus.on('phase:change', paintTitle);
 
   resize();
   setView(store.state.settings.view || 'forest', true);

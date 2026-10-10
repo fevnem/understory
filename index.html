@@ -20,8 +20,22 @@
 <div id="atmos" aria-hidden="true"><div class="atmos-rain"></div><div class="atmos-veil"></div></div>
 
 <header class="masthead">
-  <h1 class="wordmark">Understory</h1>
-  <p class="thesis">Plant a tree, not a timer.</p>
+  <div class="brand">
+    <h1 class="wordmark">Understory</h1>
+    <p class="thesis">Plant a tree, not a timer.</p>
+  </div>
+
+  <!-- The one way out of any view. Before this, the only route back from the garden was a key
+       nobody knew, and the button that opened it lived inside the panel it hid. -->
+  <nav class="viewnav" aria-label="Screens">
+    <button type="button" class="viewnav-btn" data-view-btn="forest" aria-pressed="true">
+      <span class="viewnav-glyph" aria-hidden="true">◔</span><span>Timer</span>
+    </button>
+    <button type="button" class="viewnav-btn" data-view-btn="garden" aria-pressed="false">
+      <span class="viewnav-glyph" aria-hidden="true">❦</span><span>Forest</span>
+    </button>
+  </nav>
+
   <p class="masthead-note" data-role="totals" aria-live="polite"></p>
   <p class="masthead-warn" data-role="degraded" hidden>Rendering quietly — your device is on the still-image forest.</p>
 </header>
@@ -33,8 +47,22 @@
 
 <footer class="colophon">
   <span>Everything runs here, in this page. Nothing is uploaded, nothing is tracked.</span>
-  <span class="colophon-keys"><kbd>space</kbd> sow · <kbd>a</kbd> abandon · <kbd>s</kbd> skip · <kbd>g</kbd> forest · <kbd>m</kbd> mute</span>
+  <span class="colophon-keys"><kbd>space</kbd> sow · <kbd>a</kbd> abandon · <kbd>s</kbd> skip · <kbd>g</kbd> forest · <kbd>esc</kbd> back · <kbd>m</kbd> mute · <kbd>?</kbd> keys</span>
 </footer>
+
+<dialog class="keysheet" data-role="keysheet" aria-label="Keyboard">
+  <h2>Keys</h2>
+  <dl class="keysheet-list">
+    <dt><kbd>space</kbd></dt><dd>sow a tree · hold · resume</dd>
+    <dt><kbd>a</kbd></dt><dd>abandon the tree — it wilts</dd>
+    <dt><kbd>s</kbd></dt><dd>skip the rest</dd>
+    <dt><kbd>g</kbd></dt><dd>garden / timer</dd>
+    <dt><kbd>esc</kbd></dt><dd>back to the timer</dd>
+    <dt><kbd>m</kbd></dt><dd>mute everything</dd>
+    <dt><kbd>?</kbd></dt><dd>this sheet</dd>
+  </dl>
+  <form method="dialog"><button type="submit" class="ctl">Close</button></form>
+</dialog>
 
 <noscript><p class="noscript">Understory needs JavaScript for the forest and the timer. The page works without it, the trees do not.</p></noscript>
 <script type="module" src="js/main.js"></script>
